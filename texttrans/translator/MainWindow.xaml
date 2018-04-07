@@ -8,10 +8,9 @@
         Title="Translator" Height="400" Width="700">
     <Grid>
         <Label x:Name="label" Content="Azure 云翻译" HorizontalAlignment="Left" Margin="39,6,0,0" VerticalAlignment="Top" Height="49" FontSize="26.667"/>
-        <TextBox x:Name="TextToTranslate" HorizontalAlignment="Left" Height="23" Margin="42,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="600" FontSize="14" TabIndex="3"/>
-        <Label x:Name="EnterTextLabel" Content="待翻译文本：" HorizontalAlignment="Left" Margin="40,129,0,0" VerticalAlignment="Top" FontSize="14"/>
+        <TextBox x:Name="TextToTranslate" HorizontalAlignment="Left" Height="23" Margin="39,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="620" FontSize="14" TabIndex="3"/>
+        <Label x:Name="EnterTextLabel" Content="待翻译文本：" HorizontalAlignment="Left" Margin="39,129,0,0" VerticalAlignment="Top" FontSize="14"/>
         <Label x:Name="toLabel" Content="目标语言：" HorizontalAlignment="Left" Margin="304,58,0,0" VerticalAlignment="Top" FontSize="14"/>
-
         <Button x:Name="TranslateButton" Content="翻译" HorizontalAlignment="Left" Margin="39,206,0,0" VerticalAlignment="Top" Width="114" Height="31" Click="TranslateButton_Click" FontSize="14" TabIndex="4" IsDefault="True"/>
         <ComboBox x:Name="ToLanguageComboBox" 
                 HorizontalAlignment="Left" 
@@ -20,12 +19,12 @@
                 Width="175" FontSize="14" TabIndex="2">
 
         </ComboBox>
-        <Label x:Name="fromLabel" Content="原始语言：" HorizontalAlignment="Left" Margin="40,58,0,0" VerticalAlignment="Top" FontSize="14"/>
+        <Label x:Name="fromLabel" Content="原始语言：" HorizontalAlignment="Left" Margin="39,58,0,0" VerticalAlignment="Top" FontSize="14"/>
         <ComboBox x:Name="FromLanguageComboBox" 
             HorizontalAlignment="Left" 
-            Margin="42,88,0,0" 
+            Margin="39,88,0,0" 
             VerticalAlignment="Top" 
             Width="175" FontSize="14" TabIndex="1"/>
-        <Label x:Name="TranslatedTextLabel" Content="译文内容" HorizontalAlignment="Left" Margin="39,255,0,0" VerticalAlignment="Top" Width="620" FontSize="14" Height="85" BorderThickness="0"/>
+        <Label x:Name="TranslatedTextLabel" BorderThickness="1" BorderBrush="#FFABADB3" Margin="39,255,0,0" Content="译文内容" HorizontalAlignment="Left" VerticalAlignment="Top" Width="620" FontSize="14" Height="85"/>
     </Grid>
 </Window>
