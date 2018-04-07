@@ -25,6 +25,6 @@
             Margin="39,88,0,0" 
             VerticalAlignment="Top" 
             Width="175" FontSize="14" TabIndex="1"/>
-        <Label x:Name="TranslatedTextLabel" BorderThickness="1" BorderBrush="#FFABADB3" Margin="39,255,0,0" Content="译文内容" HorizontalAlignment="Left" VerticalAlignment="Top" Width="620" FontSize="14" Height="85"/>
+        <TextBox x:Name="TranslatedText" TextWrapping="Wrap" IsReadOnly="True" Margin="39,255,0,0" Text="译文内容" HorizontalAlignment="Left" VerticalAlignment="Top" Width="620" FontSize="14" Height="85"></TextBox>
     </Grid>
 </Window>
