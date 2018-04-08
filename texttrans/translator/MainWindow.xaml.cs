@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Windows;
 using System.Runtime.Serialization;
+using System.Windows.Media.Imaging;
 
 namespace translator
 {
@@ -43,6 +44,11 @@ namespace translator
             else
             {
                 InitializeComponent();          // start the GUI
+                BitmapImage img = new BitmapImage();
+                img.BeginInit();
+                img.StreamSource = this.GetType().Assembly.GetManifestResourceStream("translator.Resources.MSTIcon.ico");
+                img.EndInit();
+                this.Icon = img;
                 GetLanguagesForTranslate();     // get codes of languages that can be translated
                 GetLanguageNames();             // get friendly names of languages
                 PopulateLanguageMenus();        // fill the drop-down language lists
@@ -60,9 +66,6 @@ namespace translator
         // ***** POPULATE LANGUAGE MENUS
         private void PopulateLanguageMenus()
         {
-            // Add option to automatically detect the source language
-            //FromLanguageComboBox.Items.Add("自动检测");//Detect
-
             int count = languageCodesAndTitles.Count;
             foreach (string menuItem in languageCodesAndTitles.Keys)
             {
@@ -70,7 +73,7 @@ namespace translator
                 ToLanguageComboBox.Items.Add(menuItem);
             }
 
-            // set default languages
+            // 设置默认的源语言和目标语言
             FromLanguageComboBox.SelectedItem = "英语";
             ToLanguageComboBox.SelectedItem = "简体中文";
         }
@@ -79,14 +82,13 @@ namespace translator
         private string CorrectSpelling(string text)
         {
             string uri = BING_SPELL_CHECK_API_ENDPOINT + "?mode=spell&mkt=en-US";
-
-            // create request to Bing Spell Check API
+            // 创建拼写检查的请求
             HttpWebRequest spellCheckWebRequest = (HttpWebRequest)WebRequest.Create(uri);
             spellCheckWebRequest.Headers.Add("Ocp-Apim-Subscription-Key", BING_SPELL_CHECK_API_SUBSCRIPTION_KEY);
             spellCheckWebRequest.Method = "POST";
-            spellCheckWebRequest.ContentType = "application/x-www-form-urlencoded"; // doesn't work without this
+            spellCheckWebRequest.ContentType = "application/x-www-form-urlencoded"; // 这个设置是必须的！
 
-            // create and send body of request
+            // 把文本内容放在请求的 body 中
             string body = "text=" + System.Web.HttpUtility.UrlEncode(text);
             byte[] data = Encoding.UTF8.GetBytes(body);
             spellCheckWebRequest.ContentLength = data.Length;
@@ -94,51 +96,46 @@ namespace translator
                 requestStream.Write(data, 0, data.Length);
             HttpWebResponse response = (HttpWebResponse)spellCheckWebRequest.GetResponse();
 
-            // read and parse JSON response and get spelling corrections
+            // 从返回中取出 json 格式的拼写检查结果
             var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
             var responseStream = response.GetResponseStream();
             var jsonString = new StreamReader(responseStream, Encoding.GetEncoding("utf-8")).ReadToEnd();
             dynamic jsonResponse = serializer.DeserializeObject(jsonString);
             var flaggedTokens = jsonResponse["flaggedTokens"];
 
-            // construct sorted dictionary of corrections in reverse order in string (right to left)
-            // so that making a correction can't affect later indexes
+            // 我们定义一个规则来应用拼写检查的结果，
+            // 比如：当 拼写检查的权值大于 0.7 时就用建议的值替换掉文本中的值。
             var corrections = new SortedDictionary<int, string[]>(Comparer<int>.Create((a, b) => b.CompareTo(a)));
             for (int i = 0; i < flaggedTokens.Length; i++)
             {
                 var correction = flaggedTokens[i];
-                var suggestion = correction["suggestions"][0];  // consider only first suggestion
-                if (suggestion["score"] > (decimal)0.7)         // take it only if highly confident
-                    corrections[(int)correction["offset"]] = new string[]   // dict key   = offset
-                        { correction["token"], suggestion["suggestion"] };  // dict value = {error, correction}
+                var suggestion = correction["suggestions"][0];
+                if (suggestion["score"] > (decimal)0.7)         
+                    corrections[(int)correction["offset"]] = new string[]   
+                        { correction["token"], suggestion["suggestion"] }; 
             }
 
-            // apply the corrections in order from right to left
             foreach (int i in corrections.Keys)
             {
                 var oldtext = corrections[i][0];
                 var newtext = corrections[i][1];
-
-                // apply capitalization from original text to correction - all caps or initial caps
                 if (text.Substring(i, oldtext.Length).All(char.IsUpper)) newtext = newtext.ToUpper();
                 else if (char.IsUpper(text[i])) newtext = newtext[0].ToString().ToUpper() + newtext.Substring(1);
-
                 text = text.Substring(0, i) + newtext + text.Substring(i + oldtext.Length);
             }
-
             return text;
         }
 
         // ***** GET TRANSLATABLE LANGAUGE CODES
         private void GetLanguagesForTranslate()
         {
-            // send request to get supported language codes
+            // 获得翻译服务支持的语言
             string uri = TEXT_TRANSLATION_API_ENDPOINT + "GetLanguagesForTranslate?scope=text";
             WebRequest WebRequest = WebRequest.Create(uri);
             WebRequest.Headers.Add("Ocp-Apim-Subscription-Key", TEXT_TRANSLATION_API_SUBSCRIPTION_KEY);
             WebResponse response = null;
 
-            // read and parse the XML response
+            // 把返回的 xml 信息抽取到数组中
             response = WebRequest.GetResponse();
             using (Stream stream = response.GetResponseStream())
             {
@@ -151,7 +148,7 @@ namespace translator
         //***** GET FRIENDLY LANGUAGE NAMES
         private void GetLanguageNames()
         {
-            // send request to get supported language names in English
+            // 获得简体中文的语言名称
             string uri = TEXT_TRANSLATION_API_ENDPOINT + "GetLanguageNames?locale=zh-CHS";
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
             request.Headers.Add("Ocp-Apim-Subscription-Key", TEXT_TRANSLATION_API_SUBSCRIPTION_KEY);
@@ -159,51 +156,50 @@ namespace translator
             request.Method = "POST";
             DataContractSerializer dcs = new DataContractSerializer(Type.GetType("System.String[]"));
             using (Stream stream = request.GetRequestStream())
+            {
                 dcs.WriteObject(stream, languageCodes);
-
-            // read and parse the XML response
+            }
+                
+            // 把返回的 xml 信息抽取到数组中
             var response = request.GetResponse();
             string[] languageNames;
             using (Stream stream = response.GetResponseStream())
+            {
                 languageNames = (string[])dcs.ReadObject(stream);
-
-            //load the dictionary for the combo box
+            }
+                
+            // 把支持的语言列表及其友好名称保存到字典数据结构中，
+            // 随后会把它们绑定给 combo box 控件进行显示
             for (int i = 0; i < languageNames.Length; i++)
+            {
                 languageCodesAndTitles.Add(languageNames[i], languageCodes[i]);
+            } 
         }
 
         // ***** PERFORM TRANSLATION ON BUTTON CLICK
         private void TranslateButton_Click(object sender, EventArgs e)
         {
             string textToTranslate = TextToTranslate.Text.Trim();
-
             string fromLanguage = FromLanguageComboBox.SelectedValue.ToString();
-            string fromLanguageCode;
-
-            fromLanguageCode = languageCodesAndTitles[fromLanguage];
-
+            string fromLanguageCode = languageCodesAndTitles[fromLanguage];
             string toLanguageCode = languageCodesAndTitles[ToLanguageComboBox.SelectedValue.ToString()];
 
-            // spell-check the source text if the source language is English
+            // 如果要翻译的文本是英语，还可以进行拼写检查
             if (fromLanguageCode == "en")
             {
-                if (textToTranslate.StartsWith("-"))    // don't spell check in this case
-                    textToTranslate = textToTranslate.Substring(1);
-                else
-                {
-                    textToTranslate = CorrectSpelling(textToTranslate);
-                    TextToTranslate.Text = textToTranslate;     // put corrected text into input field
-                }
+                textToTranslate = CorrectSpelling(textToTranslate);
+                // 把更新后的文本保存到 UI 控件上
+                TextToTranslate.Text = textToTranslate;     
             }
 
-            // handle null operations: no text or same source/target languages
+            // 处理文本为空和不需要翻译的情况
             if (textToTranslate == "" || fromLanguageCode == toLanguageCode)
             {
                 TranslatedText.Text = textToTranslate;
                 return;
             }
 
-            // send HTTP request to perform the translation
+            // 通过 http 请求执行翻译任务
             string uri = string.Format(TEXT_TRANSLATION_API_ENDPOINT + "Translate?text=" +
                 System.Web.HttpUtility.UrlEncode(textToTranslate) + "&from={0}&to={1}", fromLanguageCode, toLanguageCode);
             var translationWebRequest = HttpWebRequest.Create(uri);
@@ -211,13 +207,11 @@ namespace translator
             WebResponse response = null;
             response = translationWebRequest.GetResponse();
 
-            // Parse the response XML
+            // 把返回的翻译结果抽取到 UI 控件中
             Stream stream = response.GetResponseStream();
             StreamReader translatedStream = new StreamReader(stream, Encoding.GetEncoding("utf-8"));
             System.Xml.XmlDocument xmlResponse = new System.Xml.XmlDocument();
             xmlResponse.LoadXml(translatedStream.ReadToEnd());
-
-            // Update the translation field
             TranslatedText.Text = xmlResponse.InnerText;
         }
     }
